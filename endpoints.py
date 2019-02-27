@@ -1,20 +1,16 @@
-import json
-
 from flask import (
     current_app, Blueprint,
     Response, stream_with_context,
-    render_template_string,
     Namespace, request
 )
 from flask_restplus import Resource
 
+from CTFd.models import db
+from CTFd.schemas.files import FileSchema
 from CTFd.utils import get_app_config
+from CTFd.utils import user
 from CTFd.utils.decorators import authed_only, ratelimit, admins_only
 from CTFd.utils.uploads import get_uploader
-from CTFd.utils import user
-from CTFd.schemas.files import FileSchema
-from CTFd.models import db, Submissions, Users
-
 # from .api import submission_list, query_details
 from .models import JudgeCaseFiles
 
@@ -22,6 +18,7 @@ events = Blueprint("icpc_events", __name__)
 results_namespace = Namespace("results", description='querying judge results')
 judgelogs_namespace = Namespace("judge_logs", description='displaying judge logs')
 cases_namespace = Namespace('cases', description='uploading and downloading judge cases')
+
 
 @events.route("/events")
 @authed_only
@@ -35,7 +32,7 @@ def subscribe():
 
     enabled = get_app_config("SERVER_SENT_EVENTS")
     if enabled is False:
-        return ("", 204)
+        return "", 204
 
     return Response(gen(), mimetype="text/event-stream")
 
@@ -45,6 +42,7 @@ class Results(Resource):
     @authed_only
     def get(self):
         pass
+
 
 @judgelogs_namespace.route('/')
 class JudgeLogs(Resource):
@@ -75,8 +73,8 @@ class ProgrammingCases(Resource):
                 challenge_id=challenge_id, location=location
             )
             db.session.add(file_row)
-            db.session.commit()
             objs.append(file_row)
+        db.session.commit()
         schema = FileSchema(many=True)
         response = schema.dump(objs)
         if response.errors:

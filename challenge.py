@@ -1,18 +1,16 @@
 import math
-from flask import Blueprint
 from base64 import b64decode
+
+from flask import Blueprint
 
 from CTFd.models import (
     db, Challenges, ChallengeFiles, Tags, Flags, Solves, Hints, Fails
 )
+from CTFd.plugins.challenges import BaseChallenge
 from CTFd.utils.modes import get_model
-from CTFd.utils.logging import log
 from CTFd.utils.uploads import delete_file, get_uploader
 from CTFd.utils.user import get_ip
-from CTFd.plugins.challenges import BaseChallenge
-
 from .models import DynICPCModel, JudgeCaseFiles
-
 
 
 class DynICPCChallenge(BaseChallenge):
@@ -88,14 +86,6 @@ class DynICPCChallenge(BaseChallenge):
                 'max_cpu_time', 'max_real_time', 'max_memory', 'max_process_number', 'max_output_size', 'max_stack'
             ]:
                 setattr(challenge, attr, value)
-        # if challenge.problem_id != -1 and challenge_prepared(challenge.problem_id):
-        #     try:
-        #         update_problem(challenge.problem_id, limits={
-        #             i: int(data[i]) for i in
-        #             ['max_cpu_time', 'max_real_time', 'max_memory', 'max_process_number', 'max_output_size', 'max_stack']
-        #         })
-        #     except AssertionError:
-        #         log('programming', '[{date}] update problem error')
 
         Model = get_model()
 
@@ -109,10 +99,8 @@ class DynICPCChallenge(BaseChallenge):
 
         # It is important that this calculation takes into account floats.
         # Hence this file uses from __future__ import division
-        value = (
-            ((challenge.minimum - challenge.initial) / (challenge.decay ** 2))
-            * (solve_count ** 2)
-        ) + challenge.initial
+        value = (((challenge.minimum - challenge.initial) / (challenge.decay ** 2))
+                 * (solve_count ** 2)) + challenge.initial
 
         value = math.ceil(value)
 
@@ -129,7 +117,7 @@ class DynICPCChallenge(BaseChallenge):
         Fails.query.filter_by(challenge_id=challenge.id).delete()
         Solves.query.filter_by(challenge_id=challenge.id).delete()
         Flags.query.filter_by(challenge_id=challenge.id).delete()
-        
+
         files = ChallengeFiles.query.filter_by(challenge_id=challenge.id).all()
         for f in files:
             delete_file(f.id)
@@ -139,7 +127,7 @@ class DynICPCChallenge(BaseChallenge):
         for f in files:
             uploader.delete(f.location)
         JudgeCaseFiles.query.filter_by(challenge_id=challenge.id).delete()
-        
+
         Tags.query.filter_by(challenge_id=challenge.id).delete()
         Hints.query.filter_by(challenge_id=challenge.id).delete()
         DynICPCModel.query.filter_by(id=challenge.id).delete()
@@ -195,11 +183,8 @@ class DynICPCChallenge(BaseChallenge):
         # We subtract -1 to allow the first solver to get max point value
         solve_count -= 1
 
-        # It is important that this calculation takes into account floats.
-        # Hence this file uses from __future__ import division
-        value = (
-            ((chal.minimum - chal.initial) / (chal.decay ** 2)) * (solve_count ** 2)
-        ) + chal.initial
+        value = (((chal.minimum - chal.initial) / (chal.decay ** 2))
+                 * (solve_count ** 2)) + chal.initial
 
         value = math.ceil(value)
         if value < chal.minimum:

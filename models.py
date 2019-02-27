@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 from flask import Blueprint
 
@@ -32,6 +33,7 @@ class DynICPCModel(Challenges):  # db
 
 # Better seperate from CTFd File model
 # for no one want's contestants to access the test cases
+# TODO: better file management
 class JudgeCaseFiles(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id'))
@@ -42,10 +44,14 @@ class JudgeCaseFiles(db.Model):
         self.location = location
 
 
-class ICPCSubmission(db.Model):
+class PSubmission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.Text, default=uuid.uuid4())
     code = db.Column(db.Text, default='')
-    status = db.Column(db.Integer, default=1)
+    lang = db.Column(db.Text, default='')
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id'))
+
+    status = db.Column(db.Text, default='added to queue')
     result = db.Column(db.Text, default='unknown')
     time = db.Column(db.Integer, default=0)
     memory = db.Column(db.Integer, default=0)
@@ -53,3 +59,6 @@ class ICPCSubmission(db.Model):
     author = db.Column(db.Integer, db.ForeignKey('users.id'))
     author_team = db.Column(db.Integer, db.ForeignKey("teams.id"))
     date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    def __init__(self, *args, **kwargs):
+        super(PSubmission, self).__init__(**kwargs)

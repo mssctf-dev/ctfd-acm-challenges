@@ -3,9 +3,8 @@ from CTFd.plugins import register_plugin_assets_directory
 from CTFd.plugins.challenges import CHALLENGE_CLASSES
 
 
-from .models import *
-from .routes import cases_namespace
-from .endpoints import results_namespace
+from .challenge import DynICPCChallenge
+from .endpoints import results_namespace, cases_namespace
 
 
 def load(app):
