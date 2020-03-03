@@ -1,9 +1,9 @@
 import datetime
 import uuid
 
-from flask import Blueprint
-
 from CTFd.models import db, Challenges
+
+
 # from .api import *
 
 
@@ -26,6 +26,8 @@ class DynICPCModel(Challenges):  # db
     max_output_size = db.Column(db.Integer, default=10000)
     max_stack = db.Column(db.Integer, default=32 * 1024 * 1024)
 
+    dynamic_score = db.Column(db.Integer, default=0)
+
     def __init__(self, *args, **kwargs):
         super(DynICPCModel, self).__init__(**kwargs)
         self.initial = kwargs["value"]
@@ -46,19 +48,26 @@ class JudgeCaseFiles(db.Model):
 
 class PSubmission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    uuid = db.Column(db.Text, default=uuid.uuid4())
+    uuid = db.Column(db.Text, default=str(uuid.uuid4()))
     code = db.Column(db.Text, default='')
     lang = db.Column(db.Text, default='')
-    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id'))
 
     status = db.Column(db.Text, default='added to queue')
     result = db.Column(db.Text, default='unknown')
     time = db.Column(db.Integer, default=0)
     memory = db.Column(db.Integer, default=0)
 
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id'))
     author = db.Column(db.Integer, db.ForeignKey('users.id'))
     author_team = db.Column(db.Integer, db.ForeignKey("teams.id"))
     date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    ip = db.Column(db.String(46))
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, code, lang, chall_id, user_id, team_id, ip, *args, **kwargs):
         super(PSubmission, self).__init__(**kwargs)
+        self.code = code
+        self.lang = lang
+        self.challenge_id = chall_id
+        self.author = user_id
+        self.author_team = team_id
+        self.ip = ip

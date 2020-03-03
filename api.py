@@ -5,11 +5,11 @@ from flask import (
     Response, stream_with_context,
     abort)
 from flask_restplus import Resource, Namespace
-from sqlalchemy.sql.functions import current_user
 
 from CTFd.models import db, Solves, Fails
 from CTFd.schemas.files import FileSchema
 from CTFd.utils import config, get_app_config, user
+from CTFd.utils import user as current_user
 from CTFd.utils.decorators import (
     authed_only, ratelimit, admins_only,
     during_ctf_time_only, require_verified_emails
@@ -114,20 +114,20 @@ class Challenge(Resource):
             request_data = request.get_json()
         challenge_id = request_data.get("challenge_id")
         challenge = DynICPCModel.query.filter_by(id=challenge_id).first_or_404()
+        user = get_current_user()
+        team = get_current_team()
         if current_user.is_admin():
             preview = request.args.get("preview", False)
             if preview:
-                status, message = DynICPCChallenge.real_attempt(challenge, request)
+                status, message = DynICPCChallenge.real_attempt(user, team, challenge, request)
 
                 return {
                     "success": True,
                     "data": {
-                        "status": "already_solved" if status else "wrong",
+                        "status": "already_solved" if status else "incorrect",
                         "message": message,
                     },
                 }
-        user = get_current_user()
-        team = get_current_team()
         if (config.is_teams_mode() and team is None) or (challenge.state == "locked"):
             abort(403)
         if challenge.state == "hidden":
@@ -148,7 +148,7 @@ class Challenge(Resource):
 
         ten_sec_ago = datetime.datetime.utcnow() + datetime.timedelta(seconds=-10)
 
-        if PSubmission.query.filter_by(PSubmission.date >= ten_sec_ago).first():
+        if PSubmission.query.filter(PSubmission.date >= ten_sec_ago).first():
             return (
                 {
                     "success": True,
@@ -188,12 +188,12 @@ class Challenge(Resource):
                 },
             }
 
-        status, message = DynICPCChallenge.real_attempt(challenge, request)
+        status, message = DynICPCChallenge.real_attempt(user, team, challenge, request)
 
         return {
             "success": True,
             "data": {
-                "status": "already_solved" if status else "wrong",
+                "status": "already_solved" if status else "incorrect",
                 "message": message,
             },
         }

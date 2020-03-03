@@ -92,7 +92,7 @@ CTFd._internal.challenge.submit = function (preview) {
     };
     let deferred = $.Deferred();
     CTFd.api.request(
-        "POST", CTFd.config.urlRoot + "/acm_chall/challenge/attempt",
+        "POST", CTFd.config.urlRoot + "/api/v1/acm_chall/challenge/attempt",
         preview ? {'preview': true} : {}, params,
         {
             "Accept": "application/json",
@@ -100,7 +100,7 @@ CTFd._internal.challenge.submit = function (preview) {
         }, {},{},
         deferred
     );
-    deferred.promise().then(function (response) {
+    return deferred.promise().then(function (response) {
         if (response.status === 429) {
             // User was ratelimited but process response
             return response;
