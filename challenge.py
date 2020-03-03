@@ -136,17 +136,25 @@ class DynICPCChallenge(BaseChallenge):
         db.session.commit()
 
     @staticmethod
-    def attempt(challenge, request):
+    def attempt(chall, req):
+        return True, 'Invalid Operation'
+
+    @staticmethod
+    def real_attempt(challenge, request):
         r = request.form or request.get_json()
         try:
             r['code'] = b64decode(r['submission']).decode()
-            queue.put(DynICPCChallenge) # wip
+            queue.put(DynICPCChallenge)  # wip
         except:
             return False, 'error'
         return True, 'Added to Judge Queue'
 
     @staticmethod
-    def fail(user, team, challenge, request):
+    def fail(user, team, chall, req):
+        pass
+
+    @staticmethod
+    def real_fail(user, team, challenge, request):
         db.session.add(Fails(
             user_id=user.id,
             team_id=team.id if team else None,
@@ -159,6 +167,10 @@ class DynICPCChallenge(BaseChallenge):
 
     @staticmethod
     def solve(user, team, challenge, request):
+        pass
+
+    @staticmethod
+    def real_solve(user, team, challenge, request):
         chal = DynICPCModel.query.filter_by(id=challenge.id).first()
         Model = get_model()
         solve = Solves(

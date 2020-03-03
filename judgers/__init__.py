@@ -22,3 +22,6 @@ class JudgeQueue(Queue, Thread):  # item: task
                     break
                 except Full:
                     pass  # warning: timeout, trying again
+
+
+queue = JudgeQueue()

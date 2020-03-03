@@ -90,8 +90,17 @@ CTFd._internal.challenge.submit = function (preview) {
         'submission': btoa(submission),
         'language': language,
     };
-    CTFd.api.post_challenge_attempt(
-        preview ? {'preview': true} : {}, params).then(function (response) {
+    let deferred = $.Deferred();
+    CTFd.api.request(
+        "POST", CTFd.config.urlRoot + "/acm_chall/challenge/attempt",
+        preview ? {'preview': true} : {}, params,
+        {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }, {},{},
+        deferred
+    );
+    deferred.promise().then(function (response) {
         if (response.status === 429) {
             // User was ratelimited but process response
             return response;
