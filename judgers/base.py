@@ -3,16 +3,19 @@ from multiprocessing.dummy import Pool
 from threading import Thread
 
 import docker
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from ..models import PSubmission, JudgeCaseFiles
 
 
 class JudgeThreadBase(Thread):
     judgers = {}
+    session = scoped_session(sessionmaker())
 
     @staticmethod
-    def get_judger(task: PSubmission):
-        return JudgeThreadBase.judgers[task.lang](task)
+    def get_judger(task_id, callback):
+        task = PSubmission.query.filter_by(id=task_id).first()
+        return JudgeThreadBase.judgers[task.lang](task_id, callback)
 
     @staticmethod
     def convert_readable_text(text):
@@ -52,9 +55,10 @@ class JudgeThreadBase(Thread):
         reader = Pool(10)
         reader.map()
         pass
-    
+
     def get_files(self):
-        files = JudgeCaseFiles.query.filter_by(challenge_id=self.task.challenge_id).all()
+        task = PSubmission.query.filter_by(id=self.task_id).first()
+        files = JudgeCaseFiles.query.filter_by(challenge_id=task.challenge_id).all()
         inputs = []
         outputs = []
         for i in files:
@@ -75,6 +79,7 @@ class JudgeThreadBase(Thread):
                 k += 1
             yield inputs[j], outputs[k]
 
-    def __init__(self, task: PSubmission):
+    def __init__(self, task_id, callback):
         super(JudgeThreadBase, self).__init__()
-        self.task = task
+        self.task_id = task_id
+        self.callback = callback

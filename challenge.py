@@ -4,14 +4,14 @@ from base64 import b64decode
 from flask import Blueprint
 
 from CTFd.models import (
-    db, Challenges, ChallengeFiles, Tags, Flags, Solves, Hints, Fails
-)
+    db, Challenges, ChallengeFiles, Tags, Flags, Solves, Hints, Fails,
+    Users, Teams)
 from CTFd.plugins.challenges import BaseChallenge
 from CTFd.utils.modes import get_model
 from CTFd.utils.uploads import delete_file, get_uploader
 from CTFd.utils.user import get_ip
 from .judgers import queue
-from .models import DynICPCModel, JudgeCaseFiles
+from .models import DynICPCModel, JudgeCaseFiles, PSubmission
 
 
 class DynICPCChallenge(BaseChallenge):
@@ -72,6 +72,7 @@ class DynICPCChallenge(BaseChallenge):
             'max_process_number': challenge.max_process_number,
             'max_output_size': challenge.max_output_size,
             'max_stack': challenge.max_stack,
+            'dynamic_score': challenge.dynamic_score,
         }
 
     @staticmethod
@@ -83,7 +84,7 @@ class DynICPCChallenge(BaseChallenge):
                 value = float(value)
             if attr in [
                 'id', 'name', 'value', 'description', 'category', 'state', 'max_attempts', 'type', 'type_data',
-
+                'dynamic_score',
                 'max_cpu_time', 'max_real_time', 'max_memory', 'max_process_number', 'max_output_size', 'max_stack'
             ]:
                 setattr(challenge, attr, value)
@@ -136,15 +137,34 @@ class DynICPCChallenge(BaseChallenge):
         db.session.commit()
 
     @staticmethod
+    def post_process(task: PSubmission):
+        challenge = DynICPCModel.query.filter_by(id=task.challenge_id).first()
+        user = Users.query.filter_by(id=task.author).first()
+        team = Teams.query.filter_by(id=task.author_team).first()
+        if task.result == '':
+            DynICPCChallenge.real_solve(user, team, challenge, task)
+        pass
+
+    @staticmethod
     def attempt(chall, req):
         return True, 'Invalid Operation'
 
     @staticmethod
-    def real_attempt(challenge, request):
+    def real_attempt(user, team, challenge, request):
         r = request.form or request.get_json()
         try:
             r['code'] = b64decode(r['submission']).decode()
-            queue.put(DynICPCChallenge)  # wip
+            task = PSubmission(
+                code=r['code'],
+                lang=r['language'],
+                chall_id=challenge.id,
+                user_id=user.id,
+                team_id=team.id if team else None,
+                ip=get_ip(req=request),
+            )
+            db.session.add(task)
+            db.session.commit()
+            queue.put((task.id, DynICPCChallenge.post_process))
         except:
             return False, 'error'
         return True, 'Added to Judge Queue'
@@ -154,13 +174,13 @@ class DynICPCChallenge(BaseChallenge):
         pass
 
     @staticmethod
-    def real_fail(user, team, challenge, request):
+    def real_fail(user, team, challenge, task):
         db.session.add(Fails(
             user_id=user.id,
             team_id=team.id if team else None,
             challenge_id=challenge.id,
-            ip=get_ip(request),
-            provided=request.judge_result['submission_id']
+            ip=task.ip,
+            provided=task.id
         ))
         db.session.commit()
         db.session.close()
@@ -170,17 +190,18 @@ class DynICPCChallenge(BaseChallenge):
         pass
 
     @staticmethod
-    def real_solve(user, team, challenge, request):
+    def real_solve(user, team, challenge, task):
         chal = DynICPCModel.query.filter_by(id=challenge.id).first()
-        Model = get_model()
-        solve = Solves(
+
+        db.session.add(Solves(
             user_id=user.id,
             team_id=team.id if team else None,
             challenge_id=challenge.id,
-            ip=get_ip(request),
-            provided=request.judge_result['submission_id']
-        )
-        db.session.add(solve)
+            ip=task.ip,
+            provided=task.id
+        ))
+
+        Model = get_model()
         solve_count = (
             Solves.query.join(Model, Solves.account_id == Model.id).filter(
                 Solves.challenge_id == challenge.id,
@@ -191,13 +212,14 @@ class DynICPCChallenge(BaseChallenge):
 
         # We subtract -1 to allow the first solver to get max point value
         solve_count -= 1
-
-        value = (((chal.minimum - chal.initial) / (chal.decay ** 2))
-                 * (solve_count ** 2)) + chal.initial
-
-        value = math.ceil(value)
-        if value < chal.minimum:
-            value = chal.minimum
+        if chal.dynamic_score:
+            value = (((chal.minimum - chal.initial) / (chal.decay ** 2))
+                     * (solve_count ** 2)) + chal.initial
+            value = math.ceil(value)
+            if value < chal.minimum:
+                value = chal.minimum
+        else:
+            value = chal.initial
 
         chal.value = value
         db.session.commit()
