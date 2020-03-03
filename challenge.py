@@ -10,25 +10,26 @@ from CTFd.plugins.challenges import BaseChallenge
 from CTFd.utils.modes import get_model
 from CTFd.utils.uploads import delete_file, get_uploader
 from CTFd.utils.user import get_ip
+from .judgers import queue
 from .models import DynICPCModel, JudgeCaseFiles
 
 
 class DynICPCChallenge(BaseChallenge):
     id = "icpc_dynamic"
     name = "icpc_dynamic"
-    route = "/plugins/ICPC_Challenges/assets/"
+    route = "/plugins/ctfd-acm-challenges/assets/"
     templates = {  # Handlebars templates used for each aspect of challenge editing & viewing
-        "create": "/plugins/ICPC_Challenges/assets/create.html",
-        "update": "/plugins/ICPC_Challenges/assets/update.html",
-        "view": "/plugins/ICPC_Challenges/assets/view.html",
+        "create": "/plugins/ctfd-acm-challenges/assets/create.html",
+        "update": "/plugins/ctfd-acm-challenges/assets/update.html",
+        "view": "/plugins/ctfd-acm-challenges/assets/view.html",
     }
     scripts = {  # Scripts that are loaded when a template is loaded
-        "create": "/plugins/ICPC_Challenges/assets/create.js",
-        "update": "/plugins/ICPC_Challenges/assets/update.js",
-        "view": "/plugins/ICPC_Challenges/assets/view.js",
+        "create": "/plugins/ctfd-acm-challenges/assets/create.js",
+        "update": "/plugins/ctfd-acm-challenges/assets/update.js",
+        "view": "/plugins/ctfd-acm-challenges/assets/view.js",
     }
     blueprint = Blueprint(
-        "ICPC_Challenges",
+        "ctfd-acm-challenges",
         __name__,
         template_folder="templates",
         static_folder="assets",
@@ -137,16 +138,12 @@ class DynICPCChallenge(BaseChallenge):
     @staticmethod
     def attempt(challenge, request):
         r = request.form or request.get_json()
-        r['code'] = b64decode(r['submission']).decode()
-        prepare_challenge(challenge)
-        pid = DynICPCModel.query.filter(
-            DynICPCModel.id == challenge.id).first().problem_id
-        content = request_judge(pid, r['code'], r['language'])
-        request.judge_result = content
-        if content['result'] != 0:
-            return False, content['message']
-        else:
-            return True, 'Accepted'
+        try:
+            r['code'] = b64decode(r['submission']).decode()
+            queue.put(DynICPCChallenge) # wip
+        except:
+            return False, 'error'
+        return True, 'Added to Judge Queue'
 
     @staticmethod
     def fail(user, team, challenge, request):

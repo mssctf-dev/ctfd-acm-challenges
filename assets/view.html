@@ -1,5 +1,5 @@
-<link rel="stylesheet" type="text/css" href="{{ script_root }}/plugins/CTFd_ICPC_Challenges/assets/vendor/codemirror.min.css">
-<link rel="stylesheet" type="text/css" href="{{ script_root }}/plugins/CTFd_ICPC_Challenges/assets/vendor/mdn-like.min.css">
+<link rel="stylesheet" type="text/css" href="{{ script_root }}/plugins/ctfd-acm-challenges/assets/vendor/codemirror.min.css">
+<link rel="stylesheet" type="text/css" href="{{ script_root }}/plugins/ctfd-acm-challenges/assets/vendor/mdn-like.min.css">
 <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
         <div class="modal-body">
@@ -40,7 +40,7 @@
                                 <select 
                                     id="submission-language"
                                     class="form-control"
-                                    onchange="challenge.postRender()"
+                                    onchange="CTFd._internal.challenge.postRender()"
                                 >
                                     <option value="">Select Language: </option>
                                     <option value="cpp">C++</option>
@@ -55,6 +55,7 @@
                                 >Submit
                                 </button>
                             </div>
+                            
                         </div>
                         <div class="row notification-row">
                             <div class="col-md-12">
