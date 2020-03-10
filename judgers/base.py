@@ -1,21 +1,34 @@
+import threading
 import time
 from multiprocessing.dummy import Pool
-from threading import Thread
 
 import docker
-from sqlalchemy.orm import scoped_session, sessionmaker
+from flask import _app_ctx_stack, has_app_context
 
 from ..models import PSubmission, JudgeCaseFiles
 
 
-class JudgeThreadBase(Thread):
+class AppContextThread(threading.Thread):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not has_app_context():
+            raise RuntimeError('Running outside of Flask AppContext.')
+        self.app_ctx = _app_ctx_stack.top
+
+    def run(self):
+        try:
+            self.app_ctx.push()
+            super().run()
+        finally:
+            self.app_ctx.pop()
+
+
+class JudgeThreadBase(AppContextThread):
     judgers = {}
-    session = scoped_session(sessionmaker())
 
     @staticmethod
-    def get_judger(task_id, callback):
-        task = PSubmission.query.filter_by(id=task_id).first()
-        return JudgeThreadBase.judgers[task.lang](task_id, callback)
+    def get_judger(task_id, lang, callback):
+        return JudgeThreadBase.judgers[lang](task_id, callback)
 
     @staticmethod
     def convert_readable_text(text):
@@ -35,9 +48,7 @@ class JudgeThreadBase(Thread):
             image=image_name,
             name=container_name,
             resources=docker.types.Resources(
-                mem_limit=JudgeThreadBase.convert_readable_text(
-                    limits['mem_limit']
-                ) * 2,
+                mem_limit=limits['mem_limit'] * 2,
             ),
             mounts=[docker.types.Mount(
                 type='bind',

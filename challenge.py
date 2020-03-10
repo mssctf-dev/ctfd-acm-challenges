@@ -1,7 +1,8 @@
 import math
 from base64 import b64decode
+from queue import Full
 
-from flask import Blueprint
+from flask import Blueprint, current_app
 
 from CTFd.models import (
     db, Challenges, ChallengeFiles, Tags, Flags, Solves, Hints, Fails,
@@ -10,7 +11,7 @@ from CTFd.plugins.challenges import BaseChallenge
 from CTFd.utils.modes import get_model
 from CTFd.utils.uploads import delete_file, get_uploader
 from CTFd.utils.user import get_ip
-from .judgers import queue
+from .judgers import running, JudgeThreadBase
 from .models import DynICPCModel, JudgeCaseFiles, PSubmission
 
 
@@ -164,8 +165,21 @@ class DynICPCChallenge(BaseChallenge):
             )
             db.session.add(task)
             db.session.commit()
-            queue.put((task.id, DynICPCChallenge.post_process))
-        except:
+
+            thread = JudgeThreadBase.get_judger(
+                task.id, task.lang,
+                DynICPCChallenge.post_process
+            )
+            while True:
+                try:
+                    running.put(thread, timeout=10)
+                    thread.start()
+                    break
+                except Full:
+                    pass  # warning: timeout, trying again
+        except Exception as e:
+            import logging
+            logging.exception(e)
             return False, 'error'
         return True, 'Added to Judge Queue'
 

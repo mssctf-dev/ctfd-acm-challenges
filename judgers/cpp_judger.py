@@ -1,9 +1,8 @@
 import os
 import shutil
 
-
 from .base import JudgeThreadBase
-from ..models import DynICPCModel, PSubmission
+from ..models import DynICPCModel, PSubmission, db
 
 
 class CppJudger(JudgeThreadBase):
@@ -22,17 +21,19 @@ class CppJudger(JudgeThreadBase):
         return work_dir
 
     def run(self):
-        task = PSubmission.query.filter_by(id=self.task_id).first()
-        task.status = 'preparing'
-        self.session.commit()
-        challenge = DynICPCModel.query.filter_by(id=task.challenge_id).first()
-        if not challenge:
-            return  # ???
         work_dir = ''
+        task = None
         try:
+            self.app_ctx.push()
+            task = PSubmission.query.filter_by(id=self.task_id).first()
+            challenge = DynICPCModel.query.filter_by(id=task.challenge_id).first()
+            if not challenge:
+                return  # ???
+            task.status = 'preparing'
+            db.session.commit()
             work_dir = self.prepare_workdir(task)
             task.status = 'judging'
-            self.session.commit()
+            db.session.commit()
             self._execute(
                 'mssctf/runner_c_cpp',
                 task.uuid, {
@@ -54,6 +55,10 @@ class CppJudger(JudgeThreadBase):
         finally:
             if os.path.exists(work_dir):
                 os.rmdir(work_dir)
+            if task:
+                task.status = 'finishing up'
+                db.session.commit()
+            self.app_ctx.pop()
         pass
 
 
