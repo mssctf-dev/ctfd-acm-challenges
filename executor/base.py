@@ -1,29 +1,15 @@
 import threading
 import time
-from multiprocessing.dummy import Pool
 
 import docker
+from docker.types import RestartPolicy
 from flask import _app_ctx_stack, has_app_context
 
+from ..checker import ACMAnalyzer
 from ..models import PSubmission, JudgeCaseFiles
 
 
-class AppContextThread(threading.Thread):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not has_app_context():
-            raise RuntimeError('Running outside of Flask AppContext.')
-        self.app_ctx = _app_ctx_stack.top
-
-    def run(self):
-        try:
-            self.app_ctx.push()
-            super().run()
-        finally:
-            self.app_ctx.pop()
-
-
-class JudgeThreadBase(AppContextThread):
+class JudgeThreadBase(threading.Thread):
     judgers = {}
 
     @staticmethod
@@ -44,28 +30,30 @@ class JudgeThreadBase(AppContextThread):
     @staticmethod
     def _execute(image_name, container_name, limits, binds_list, env_list, wait_time=10):
         client = docker.DockerClient()
-        service = client.services.create(
+        container = client.containers.run(
             image=image_name,
             name=container_name,
-            resources=docker.types.Resources(
-                mem_limit=limits['mem_limit'] * 2,
-            ),
+            mem_limit=limits['mem_limit'] * 2,
             mounts=[docker.types.Mount(
                 type='bind',
                 source=t[0],
                 target=t[1],
             ) for t in binds_list.items()],
-            env=env_list
+            environment=env_list,
+            detach=True
         )
-        time.sleep(wait_time)
-        service.remove()
+        for _ in range(10):
+            time.sleep(wait_time // 10)
+            container.reload()
+            if container.status == 'exited':
+                break
+        if container.status == 'running':
+            container.kill()
+        container.remove()
         pass
 
-    @staticmethod
-    def judge_result(correct_dir, output_dir):
-        reader = Pool(10)
-        reader.map()
-        pass
+    def check(self, output_dir, correct_dir, log_dir, specs):
+        return self.analyzer.check(output_dir, correct_dir, log_dir, specs)
 
     def get_files(self):
         task = PSubmission.query.filter_by(id=self.task_id).first()
@@ -90,7 +78,11 @@ class JudgeThreadBase(AppContextThread):
                 k += 1
             yield inputs[j], outputs[k]
 
-    def __init__(self, task_id, callback):
-        super(JudgeThreadBase, self).__init__()
+    def __init__(self, task_id, callback, *args, **kwargs):
+        super(JudgeThreadBase, self).__init__(*args, **kwargs)
+        if not has_app_context():
+            raise RuntimeError('Running outside of Flask AppContext.')
+        self.app_ctx = _app_ctx_stack.top
         self.task_id = task_id
         self.callback = callback
+        self.analyzer = ACMAnalyzer()

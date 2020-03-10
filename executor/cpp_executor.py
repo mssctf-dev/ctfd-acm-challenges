@@ -8,12 +8,15 @@ from ..models import DynICPCModel, PSubmission, db
 class CppJudger(JudgeThreadBase):
     def prepare_workdir(self, task):
         work_dir = os.path.join('/tmp', task.uuid)
+        upload_dir = os.getenv('UPLOAD_FOLDER', None) or './CTFd/uploads'
         os.mkdir(work_dir)
         os.mkdir(os.path.join(work_dir, 'inputs'))
         os.mkdir(os.path.join(work_dir, 'outputs'))
         for i, o in self.get_files():
-            shutil.copy(i.location, os.path.join(work_dir, 'inputs'))
-            shutil.copy(o.location, os.path.join(work_dir, 'outputs'))
+            shutil.copy(upload_dir + i.location,
+                        os.path.join(work_dir, 'inputs'))
+            shutil.copy(upload_dir + o.location,
+                        os.path.join(work_dir, 'outputs'))
         os.mkdir(os.path.join(work_dir, 'compile'))
         with open(os.path.join(work_dir, 'compile', 'main.cpp'), 'w') as f:
             f.write(task.code)
@@ -46,18 +49,27 @@ class CppJudger(JudgeThreadBase):
                     'TIME_LIM': challenge.max_cpu_time,
                     'MEM_LIM': challenge.max_memory,
                     'STACK_LIM': challenge.max_stack
-                }, challenge.max_cpu_time // 500  # time limit in seconds * 2
+                }, challenge.max_real_time
+                if challenge.max_real_time != -1
+                else challenge.max_cpu_time // 1000 * 60  # time limit in seconds * 60
             )
-            task.result = self.judge_result(
+            result, stats = self.check(
                 os.path.join(work_dir, 'run', 'outputs'),
-                os.path.join(work_dir, 'outputs')
+                os.path.join(work_dir, 'outputs'),
+                os.path.join(work_dir, 'run', 'outputs'), {
+                    'cpu_time': challenge.max_cpu_time,
+                    'memory': challenge.max_memory,
+                    # 'STACK_LIM': challenge.max_stack
+                }
             )
+            task.result = result
         finally:
             if os.path.exists(work_dir):
-                os.rmdir(work_dir)
+                shutil.rmtree(work_dir, ignore_errors=True)
             if task:
                 task.status = 'finishing up'
                 db.session.commit()
+                self.callback(task)
             self.app_ctx.pop()
         pass
 
