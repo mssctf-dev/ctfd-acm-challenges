@@ -11,7 +11,7 @@ from CTFd.plugins.challenges import BaseChallenge
 from CTFd.utils.modes import get_model
 from CTFd.utils.uploads import delete_file, get_uploader
 from CTFd.utils.user import get_ip
-from .judgers import running, JudgeThreadBase
+from .executor import running, JudgeThreadBase
 from .models import DynICPCModel, JudgeCaseFiles, PSubmission
 
 
@@ -142,8 +142,10 @@ class DynICPCChallenge(BaseChallenge):
         challenge = DynICPCModel.query.filter_by(id=task.challenge_id).first()
         user = Users.query.filter_by(id=task.author).first()
         team = Teams.query.filter_by(id=task.author_team).first()
-        if task.result == '':
+        if task.result == 'Accepted':
             DynICPCChallenge.real_solve(user, team, challenge, task)
+        else:
+            DynICPCChallenge.real_fail(user, team, challenge, task)
         pass
 
     @staticmethod

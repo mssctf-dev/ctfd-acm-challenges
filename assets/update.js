@@ -7,33 +7,17 @@ $('#submit-keys').click(function (e) {
     $('#update-keys').modal('hide');
 });
 
-function loadchal(id, update) {
-    $.get(script_root + '/admin/chal/' + id, function (obj) {
-        $('#desc-write-link').click(); // Switch to Write tab
-        if (typeof update === 'undefined')
-            $('#update-challenge').modal();
-    });
-}
-
-function openchal(id) {
-    loadchal(id);
-}
-
-function reset() {
-
-}
-
 $(document).ready(function () {
     $('[data-toggle="tooltip"]').tooltip();
     $("#reset-cases").click(function (e) {
         var row = $(this)
             .parent()
             .parent();
-        ezq({
+        CTFd.ui.ezq.ezQuery({
             title: "Delete Files",
             body: "清空所有测试数据",
             success: function () {
-                CTFd.fetch("/api/v1/cases/" + CHALLENGE_ID, {
+                CTFd.fetch("/api/v1/acm_chall/cases/" + CHALLENGE_ID, {
                     method: "DELETE"
                 })
                     .then(function (response) {
@@ -50,13 +34,13 @@ $(document).ready(function () {
     $('#cases-form').submit(function (e) {
         e.preventDefault();
         var formData = new FormData(e.target);
-        formData.append("nonce", csrf_nonce);
-        var pg = ezpg({
+        formData.append("nonce", CTFd.config.csrfNonce);
+        var pg = CTFd.ui.ezq.ezProgressBar({
             width: 0,
             title: "Upload Progress"
         });
         $.ajax({
-            url: script_root + "/api/v1/cases/" + CHALLENGE_ID,
+            url: "/api/v1/acm_chall/cases/" + CHALLENGE_ID,
             data: formData,
             type: "POST",
             cache: false,
@@ -67,7 +51,7 @@ $(document).ready(function () {
                 xhr.upload.onprogress = function (e) {
                     if (e.lengthComputable) {
                         var width = (e.loaded / e.total) * 100;
-                        pg = ezpg({
+                        pg = CTFd.ui.ezq.ezProgressBar({
                             target: pg,
                             width: width
                         });
@@ -78,7 +62,7 @@ $(document).ready(function () {
             success: function (data) {
                 e.target.reset();
 
-                pg = ezpg({
+                pg = CTFd.ui.ezq.ezProgressBar({
                     target: pg,
                     width: 100
                 });
@@ -93,3 +77,15 @@ $(document).ready(function () {
         });
     })
 });
+
+function loadchal(id, update) {
+    $.get(script_root + '/admin/chal/' + id, function (obj) {
+        $('#desc-write-link').click(); // Switch to Write tab
+        if (typeof update === 'undefined')
+            $('#update-challenge').modal();
+    });
+}
+
+function openchal(id) {
+    loadchal(id);
+}

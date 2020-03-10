@@ -75,6 +75,8 @@ class ProgrammingCases(Resource):
         files = request.files.getlist("file")
         objs = []
         for f in files:
+            if not f.filename or len(f.filename) == 0:
+                continue
             uploader = get_uploader()
             location = uploader.upload(file_obj=f, filename=f.filename)
             file_row = JudgeCaseFiles(
