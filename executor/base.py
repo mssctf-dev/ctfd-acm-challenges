@@ -1,20 +1,18 @@
-import threading
 import time
 
 import docker
 from docker.types import RestartPolicy
-from flask import _app_ctx_stack, has_app_context
 
 from ..checker import ACMAnalyzer
 from ..models import PSubmission, JudgeCaseFiles
 
 
-class JudgeThreadBase(threading.Thread):
+class ExecutorBase:  # (threading.Thread):
     judgers = {}
 
     @staticmethod
-    def get_judger(task_id, lang, callback):
-        return JudgeThreadBase.judgers[lang](task_id, callback)
+    def get_executor(task_id, lang, callback):
+        return ExecutorBase.judgers[lang](task_id, callback)
 
     @staticmethod
     def convert_readable_text(text):
@@ -79,10 +77,7 @@ class JudgeThreadBase(threading.Thread):
             yield inputs[j], outputs[k]
 
     def __init__(self, task_id, callback, *args, **kwargs):
-        super(JudgeThreadBase, self).__init__(*args, **kwargs)
-        if not has_app_context():
-            raise RuntimeError('Running outside of Flask AppContext.')
-        self.app_ctx = _app_ctx_stack.top
+        super(ExecutorBase, self).__init__(*args, **kwargs)
         self.task_id = task_id
         self.callback = callback
         self.analyzer = ACMAnalyzer()

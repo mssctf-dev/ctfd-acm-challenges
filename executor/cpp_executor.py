@@ -1,11 +1,11 @@
 import os
 import shutil
 
-from .base import JudgeThreadBase
+from .base import ExecutorBase
 from ..models import DynICPCModel, PSubmission, db
 
 
-class CppJudger(JudgeThreadBase):
+class CppExecutor(ExecutorBase):
     def prepare_workdir(self, task):
         work_dir = os.path.join('/tmp', task.uuid)
         upload_dir = os.getenv('UPLOAD_FOLDER', None) or './CTFd/uploads'
@@ -13,9 +13,9 @@ class CppJudger(JudgeThreadBase):
         os.mkdir(os.path.join(work_dir, 'inputs'))
         os.mkdir(os.path.join(work_dir, 'outputs'))
         for i, o in self.get_files():
-            shutil.copy(upload_dir + i.location,
+            shutil.copy(os.path.join(upload_dir, i.location),
                         os.path.join(work_dir, 'inputs'))
-            shutil.copy(upload_dir + o.location,
+            shutil.copy(os.path.join(upload_dir, i.location),
                         os.path.join(work_dir, 'outputs'))
         os.mkdir(os.path.join(work_dir, 'compile'))
         with open(os.path.join(work_dir, 'compile', 'main.cpp'), 'w') as f:
@@ -27,7 +27,6 @@ class CppJudger(JudgeThreadBase):
         work_dir = ''
         task = None
         try:
-            self.app_ctx.push()
             task = PSubmission.query.filter_by(id=self.task_id).first()
             challenge = DynICPCModel.query.filter_by(id=task.challenge_id).first()
             if not challenge:
@@ -70,9 +69,8 @@ class CppJudger(JudgeThreadBase):
                 task.status = 'finishing up'
                 db.session.commit()
                 self.callback(task)
-            self.app_ctx.pop()
         pass
 
 
-JudgeThreadBase.judgers['c'] = CppJudger
-JudgeThreadBase.judgers['cpp'] = CppJudger
+ExecutorBase.judgers['c'] = CppExecutor
+ExecutorBase.judgers['cpp'] = CppExecutor

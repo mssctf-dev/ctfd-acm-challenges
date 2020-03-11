@@ -1,8 +1,13 @@
+from queue import Empty
+
+from flask_apscheduler import APScheduler
+
 from CTFd.api import CTFd_API_v1
 from CTFd.plugins import register_plugin_assets_directory
 from CTFd.plugins.challenges import CHALLENGE_CLASSES
 from .api import results_namespace, cases_namespace, challenge_namespace
 from .challenge import DynICPCChallenge
+from .executor import running, ExecutorBase
 from .view import views
 
 
@@ -17,3 +22,20 @@ def load(app):
     register_plugin_assets_directory(
         app, base_path="/plugins/ctfd-acm-challenges/assets/"
     )
+
+    def poll():
+        try:
+            id, lang, callback = running.get(timeout=1)
+            with app.app_context():
+                ExecutorBase.get_executor(
+                    id, lang, callback
+                ).run()
+        except Empty:
+            pass
+        except KeyboardInterrupt:
+            pass
+
+    scheduler = APScheduler()
+    scheduler.init_app(app)
+    scheduler.start()
+    scheduler.add_job(id='acm-executor', func=poll, trigger="interval", seconds=10)

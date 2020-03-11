@@ -2,7 +2,7 @@ import math
 from base64 import b64decode
 from queue import Full
 
-from flask import Blueprint, current_app
+from flask import Blueprint
 
 from CTFd.models import (
     db, Challenges, ChallengeFiles, Tags, Flags, Solves, Hints, Fails,
@@ -11,7 +11,7 @@ from CTFd.plugins.challenges import BaseChallenge
 from CTFd.utils.modes import get_model
 from CTFd.utils.uploads import delete_file, get_uploader
 from CTFd.utils.user import get_ip
-from .executor import running, JudgeThreadBase
+from .executor import running
 from .models import DynICPCModel, JudgeCaseFiles, PSubmission
 
 
@@ -168,14 +168,10 @@ class DynICPCChallenge(BaseChallenge):
             db.session.add(task)
             db.session.commit()
 
-            thread = JudgeThreadBase.get_judger(
-                task.id, task.lang,
-                DynICPCChallenge.post_process
-            )
             while True:
                 try:
-                    running.put(thread, timeout=10)
-                    thread.start()
+                    running.put((task.id, task.lang,
+                                 DynICPCChallenge.post_process))
                     break
                 except Full:
                     pass  # warning: timeout, trying again
