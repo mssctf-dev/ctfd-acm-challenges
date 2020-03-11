@@ -15,7 +15,7 @@ class CppExecutor(ExecutorBase):
         for i, o in self.get_files():
             shutil.copy(os.path.join(upload_dir, i.location),
                         os.path.join(work_dir, 'inputs'))
-            shutil.copy(os.path.join(upload_dir, i.location),
+            shutil.copy(os.path.join(upload_dir, o.location),
                         os.path.join(work_dir, 'outputs'))
         os.mkdir(os.path.join(work_dir, 'compile'))
         with open(os.path.join(work_dir, 'compile', 'main.cpp'), 'w') as f:
