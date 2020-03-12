@@ -150,7 +150,7 @@ class DynICPCChallenge(BaseChallenge):
 
     @staticmethod
     def attempt(chall, req):
-        return True, 'Invalid Operation'
+        return False, 'Invalid Operation'
 
     @staticmethod
     def real_attempt(user, team, challenge, request):

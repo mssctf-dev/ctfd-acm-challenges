@@ -16,14 +16,14 @@ from CTFd.utils.decorators import (
 )
 from CTFd.utils.decorators.visibility import check_challenge_visibility
 from CTFd.utils.uploads import get_uploader
-from CTFd.utils.user import authed, get_current_team, get_current_user
+from CTFd.utils.user import authed, get_current_team, get_current_user, is_admin
 from .challenge import DynICPCChallenge
 # from .api import submission_list, query_details
 from .models import JudgeCaseFiles, DynICPCModel, PSubmission
+from .schemas import PSubmissionSchema
 
 events = Blueprint("icpc_events", __name__)
-results_namespace = Namespace("results", description='querying judge results')
-judgelogs_namespace = Namespace("judge_logs", description='displaying judge logs')
+submissions_namespace = Namespace("results", description='querying judge results')
 cases_namespace = Namespace('cases', description='uploading and downloading judge cases')
 challenge_namespace = Namespace('challenge', description='submission endpoint')
 
@@ -45,17 +45,26 @@ def subscribe():
     return Response(gen(), mimetype="text/event-stream")
 
 
-@results_namespace.route('/')
-class Results(Resource):
+@submissions_namespace.route("/", defaults={"filter_result": None})
+@submissions_namespace.route('/<filter_result>')
+class Submission(Resource):
     @authed_only
-    def get(self):
-        pass
-
-
-@judgelogs_namespace.route('/')
-class JudgeLogs(Resource):
-    def get(self):
-        pass
+    def get(self, filter_result):
+        page = abs(int(request.args.get("page", 1, type=int)))
+        submissions = PSubmission.query
+        if not is_admin():
+            submissions = submissions.filter(PSubmission.author != 0)
+            # don't show admin submissions
+        if filter_result:
+            submissions = submissions.filter_by(
+                result=filter_result
+            )
+        submissions = submissions \
+            .order_by(PSubmission.date.desc()) \
+            .slice(page * 20 - 20, page * 20) \
+            .all()
+        schema = PSubmissionSchema(view='admin' if is_admin() else 'user')
+        return schema.dump(submissions, many=True)
 
 
 @cases_namespace.route('/<int:challenge_id>')

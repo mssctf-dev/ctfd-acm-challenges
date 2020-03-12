@@ -63,6 +63,10 @@ class PSubmission(db.Model):
     date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     ip = db.Column(db.String(46))
 
+    challenge = db.relationship(
+        DynICPCModel, foreign_keys="PSubmission.challenge_id", lazy="select"
+    )
+
     def __init__(self, code, lang, chall_id, user_id, team_id, ip, *args, **kwargs):
         super(PSubmission, self).__init__(**kwargs)
         self.code = code
