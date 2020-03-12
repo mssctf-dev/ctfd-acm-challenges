@@ -1,0 +1,14 @@
+{% extends "acm_base.html" %}
+
+{% block menu %}
+    <a class="nav-link rounded-0 active" href="#">Scoreboard</a>
+    <a class="nav-link rounded-0" href="/acm_chall{{ "/admin" if admin }}/judge_queue">Judge Queue</a>
+{% endblock %}
+
+{% block acm_content %}
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('plugins.ctfd-acm-challenges.assets', path='js/scoreboard.js') }}"></script>
+{% endblock %}

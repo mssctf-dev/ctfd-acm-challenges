@@ -20,14 +20,14 @@ class DynICPCChallenge(BaseChallenge):
     name = "icpc_dynamic"
     route = "/plugins/ctfd-acm-challenges/assets/"
     templates = {  # Handlebars templates used for each aspect of challenge editing & viewing
-        "create": "/plugins/ctfd-acm-challenges/assets/create.html",
-        "update": "/plugins/ctfd-acm-challenges/assets/update.html",
-        "view": "/plugins/ctfd-acm-challenges/assets/view.html",
+        "create": "/plugins/ctfd-acm-challenges/assets/html/create.html",
+        "update": "/plugins/ctfd-acm-challenges/assets/html/update.html",
+        "view": "/plugins/ctfd-acm-challenges/assets/html/view.html",
     }
     scripts = {  # Scripts that are loaded when a template is loaded
-        "create": "/plugins/ctfd-acm-challenges/assets/create.js",
-        "update": "/plugins/ctfd-acm-challenges/assets/update.js",
-        "view": "/plugins/ctfd-acm-challenges/assets/view.js",
+        "create": "/plugins/ctfd-acm-challenges/assets/js/create.js",
+        "update": "/plugins/ctfd-acm-challenges/assets/js/update.js",
+        "view": "/plugins/ctfd-acm-challenges/assets/js/view.js",
     }
     blueprint = Blueprint(
         "ctfd-acm-challenges",
