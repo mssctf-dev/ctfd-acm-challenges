@@ -1,12 +1,35 @@
 {% extends "acm_base.html" %}
 
 {% block menu %}
-    <a class="nav-link rounded-0 active" href="#">Scoreboard</a>
     <a class="nav-link rounded-0" href="/acm_chall{{ "/admin" if admin }}/judge_queue">Judge Queue</a>
+    <a class="nav-link rounded-0 active" href="#">Scoreboard</a>
 {% endblock %}
 
 {% block acm_content %}
-
+    <div class="ranktable-head">
+        <table class="table">
+            <tbody>
+            <tr>
+                <th width="5%">Rank</th>
+                <th width="25%">Team</th>
+                <th width="4%">Solved</th>
+                <th width="7%">Penalty</th>
+                {% for i in challenges %}
+                    <th>{{ i.name }}</th>
+                {% endfor %}
+            </tr>
+            <tr>
+                <th class="rank" width="5%">1</th>
+                <td class="team-name" width="25%"><span>我们才是这个队</span></td>
+                <td class="solved" width="4%">7</td>
+                <td class="penalty" width="7%">671</td>
+                <td class="problem-status" alphabet-id="A">
+                    <span class="label label-success">1</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 {% endblock %}
 
 {% block scripts %}

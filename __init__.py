@@ -29,10 +29,10 @@ def load(app):
         app, base_path="/plugins/ctfd-acm-challenges/assets/"
     )
     register_admin_plugin_menu_bar(
-        'ACM Challenges', '/acm_chall/admin/board'
+        'ACM Challenges', '/acm_chall/admin/judge_queue'
     )
     register_user_page_menu_bar(
-        'ACM Status', '/acm_chall/board'
+        'ACM Status', '/acm_chall/judge_queue'
     )
 
     def poll():

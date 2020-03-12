@@ -61,7 +61,7 @@ class Submission(Resource):
             )
         submissions = submissions \
             .order_by(PSubmission.date.desc()) \
-            .slice(page * 20 - 20, page * 20) \
+            .slice(page * 10 - 10, page * 10) \
             .all()
         schema = PSubmissionSchema(view='admin' if is_admin() else 'user')
         return schema.dump(submissions, many=True)

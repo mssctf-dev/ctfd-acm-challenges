@@ -1,7 +1,7 @@
 import datetime
 import uuid
 
-from CTFd.models import db, Challenges
+from CTFd.models import db, Challenges, Users, Teams
 
 
 # from .api import *
@@ -65,6 +65,12 @@ class PSubmission(db.Model):
 
     challenge = db.relationship(
         DynICPCModel, foreign_keys="PSubmission.challenge_id", lazy="select"
+    )
+    user = db.relationship(
+        Users, foreign_keys="PSubmission.author", lazy="select"
+    )
+    team = db.relationship(
+        Teams, foreign_keys="PSubmission.author_team", lazy="select"
     )
 
     def __init__(self, code, lang, chall_id, user_id, team_id, ip, *args, **kwargs):

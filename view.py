@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template
 
+from CTFd.models import Solves, Challenges
 from CTFd.utils.decorators import admins_only
+from .models import DynICPCModel, PSubmission
 
 views = Blueprint('acm_chall_views', __name__,
                   template_folder='templates', )
@@ -8,11 +10,14 @@ views = Blueprint('acm_chall_views', __name__,
 
 @views.route('/board')
 def scoreboard():  # list tasks (scoreboard)
-    return render_template('board.html', admin=False)
+    challenges = DynICPCModel.query.all()
+
+    return render_template('board.html', admin=False, challenges=challenges)
 
 
 @views.route('/judge_queue')
 def queue():
+    PSubmission.query.all()
     return render_template('judge_queue.html', admin=False)
 
 

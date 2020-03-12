@@ -66,7 +66,7 @@ class CppExecutor(ExecutorBase):
             if os.path.exists(work_dir):
                 shutil.rmtree(work_dir, ignore_errors=True)
             if task:
-                task.status = 'finishing up'
+                task.status = 'finished'
                 db.session.commit()
                 self.callback(task)
         pass

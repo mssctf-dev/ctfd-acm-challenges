@@ -1,6 +1,73 @@
 {% extends "acm_base.html" %}
+{% block stylesheets %}
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
+        #page {
+            width: 80px;
+            padding: 0 12px;
+            vertical-align: top;
+            text-align: center;
+            outline: none;
+        }
+
+        #page,
+        .input-number-decrement,
+        .input-number-increment {
+            border: 1px solid #ccc;
+            height: 40px;
+            user-select: none;
+        }
+
+        .input-number-decrement,
+        .input-number-increment {
+            display: inline-block;
+            width: 30px;
+            line-height: 38px;
+            background: #f1f1f1;
+            color: #444;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .input-number-decrement:active,
+        .input-number-increment:active {
+            background: #ddd;
+        }
+
+        .input-number-decrement {
+            border-right: none;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .input-number-increment {
+            border-left: none;
+            border-radius: 0 4px 4px 0;
+        }
+
+    </style>
+{% endblock %}
 {% block menu %}
-    <a class="nav-link rounded-0" href="/acm_chall{{ "/admin" if admin }}/board">Scoreboard</a>
     <a class="nav-link rounded-0 active" href="#">Judge Queue</a>
+    <a class="nav-link rounded-0" href="/acm_chall{{ "/admin" if admin }}/board">Scoreboard</a>
+{% endblock %}
+
+{% block acm_content %}
+    <label for="page">Page</label>
+    <span class="input-number-decrement">–</span>
+    <input id="page" type="text" value="1" min="1">
+    <span class="input-number-increment">+</span>
+    <div class="ranktable-head">
+        <table class="table">
+            <tbody id="data">
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script defer src="{{ url_for('plugins.ctfd-acm-challenges.assets', path='js/queue.js') }}"></script>
 {% endblock %}
