@@ -62,6 +62,9 @@ class CppExecutor(ExecutorBase):
                 }
             )
             task.result = result
+            task.time = stats['cpu_time']
+            task.memory = stats['memory']
+            db.session.commit()
         finally:
             if os.path.exists(work_dir):
                 shutil.rmtree(work_dir, ignore_errors=True)

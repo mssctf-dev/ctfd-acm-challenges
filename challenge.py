@@ -1,4 +1,5 @@
 import math
+import uuid
 from base64 import b64decode
 from queue import Full
 
@@ -164,6 +165,7 @@ class DynICPCChallenge(BaseChallenge):
                 user_id=user.id,
                 team_id=team.id if team else None,
                 ip=get_ip(req=request),
+                uuid=str(uuid.uuid1()),
             )
             db.session.add(task)
             db.session.commit()

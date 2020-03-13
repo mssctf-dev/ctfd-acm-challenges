@@ -13,11 +13,11 @@ class ResultAnalyzer:
         def analyze(file):
             with open(os.path.join(log_dir, file + '.log'), 'r') as f:
                 log = json.loads(f.read())
-            if log['exit_code'] != 0:
+            if (log['result'] == 4) or (log['exit_code'] != 0):
                 return False, 'Runtime Error', log
-            if log['cpu_time'] > specs['cpu_time']:
+            if (log['result'] == 1) or (log['cpu_time'] > specs['cpu_time']):
                 return False, 'Time Limit Exceeded', log
-            if log['memory'] > specs['memory']:
+            if (log['result'] == 3) or (log['memory'] > specs['memory']):
                 return False, 'Memory Limit Exceeded', log
 
             with open(os.path.join(correct_dir, file + '.out'), 'r') as f:
