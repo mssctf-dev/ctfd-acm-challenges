@@ -1,13 +1,19 @@
+from marshmallow import fields
+
 from CTFd.models import ma
+from CTFd.schemas.challenges import ChallengeSchema
+from CTFd.schemas.users import UserSchema
 from .models import PSubmission
 
 
 class PSubmissionSchema(ma.ModelSchema):
+    challenge = fields.Nested(ChallengeSchema, only=['name', ])
+    user = fields.Nested(UserSchema, only=['name', ])
     views = {
         'user': [
             'lang', 'status', 'result',
-            'time', 'memory', 'author', 'author_team',
-            'challenge_id', 'date'
+            'time', 'memory', 'user', 'team',
+            'challenge', 'date',
         ],
         'admin': [
             'code', 'ip'

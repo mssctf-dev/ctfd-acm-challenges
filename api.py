@@ -51,6 +51,7 @@ class Submission(Resource):
     @authed_only
     def get(self, filter_result):
         page = abs(int(request.args.get("page", 1, type=int)))
+        per_page = abs(int(request.args.get("slice", 10, type=int)))
         submissions = PSubmission.query
         if not is_admin():
             submissions = submissions.filter(PSubmission.author != 0)
@@ -61,7 +62,7 @@ class Submission(Resource):
             )
         submissions = submissions \
             .order_by(PSubmission.date.desc()) \
-            .slice(page * 10 - 10, page * 10) \
+            .slice(page * per_page - per_page, page * per_page) \
             .all()
         schema = PSubmissionSchema(view='admin' if is_admin() else 'user')
         return schema.dump(submissions, many=True)

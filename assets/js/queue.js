@@ -1,33 +1,42 @@
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function formatMs(s) {
+    var ms = s % 1000;
+    s = (s - ms) / 1000;
+    var secs = s % 60;
+    return secs + '.' + ms;
+}
+
 function update() {
     var table = CTFd.lib.$("#data");
     var page = parseInt(CTFd.lib.$("#page")[0].value);
     CTFd.lib.$("#page")[0].value = page;
-    table.empty();
-    table.append(
-        '<tr>\n' +
-        '    <th>ID</th>\n' +
-        '    <th>Author</th>\n' +
-        '    <th>Status</th>\n' +
-        '    <th>Language</th>\n' +
-        '    <th>Result</th>\n' +
-        '    <th>Date</th>\n' +
-        '    <th>Time</th>\n' +
-        '    <th>Memory</th>\n' +
-        '</tr>');
     CTFd.lib.$.ajax({
         url: '/api/v1/acm_chall/submissions/?page=' + page,
         success: function (data) {
+            table.empty();
             for (let i = 0; i < data.length; i++) {
                 var tr = [
                     "<tr>",
-                    "<th>" + (i + 1) + "</th>",
-                    "<th>" + data[i].author + "</th>",
-                    "<th>" + data[i].status + "</th>",
-                    "<th>" + data[i].lang + "</th>",
-                    "<th>" + data[i].result + "</th>",
-                    "<th>" + data[i].date + "</th>",
-                    "<th>" + data[i].time + "</th>",
-                    "<th>" + data[i].memory + "</th>",
+                    `<td>${data[i].user.name}</td>`,
+                    `<td>${data[i].challenge.name}</td>`,
+                    `<td>${data[i].status}</td>`,
+                    `<td>${data[i].lang}</td>`,
+                    `<td><span class="status" id="${data[i].result}">
+                        ${data[i].result}
+                    </span></td>`,
+                    `<td>${Moment(data[i].date)
+                        .local()
+                        .fromNow()}</td>`,
+                    `<td>${formatMs(data[i].time)} sec</td>`,
+                    `<td>${formatBytes(data[i].memory)}</td>`,
                     "</tr>"
                 ].join("");
                 table.append(tr);
@@ -36,9 +45,6 @@ function update() {
     })
 }
 
-CTFd.lib.$("#page").change(update);
-update();
-setInterval(update, 10000);
 (function () {
     window.inputNumber = function (el) {
 
@@ -81,3 +87,35 @@ setInterval(update, 10000);
 })();
 
 inputNumber(CTFd.lib.$('#page'));
+
+
+(function () {
+    var spinnerint;
+    var waittime = 10000;
+    var loadtime = 1000;
+
+    function showSpinner() {
+        CTFd.lib.$("#spinner svg").attr("class", "waiting");
+        spinnerint = setTimeout(showLoader, waittime);
+    }
+
+    function showLoader() {
+        CTFd.lib.$("#spinner svg").attr("class", "loading");
+        update();
+        spinnerint = setTimeout(showSpinner, loadtime);
+    }
+
+    var spinner = CTFd.lib.$("#spinner");
+    spinner.click(function () {
+        clearTimeout(spinnerint);
+        if (spinner.attr("class") === "active") {
+            spinner.attr("class", "inactive");
+        } else {
+            spinner.attr("class", "active");
+            showLoader();
+        }
+    });
+    spinner.attr("class", "active");
+    showLoader();
+    CTFd.lib.$("#page").change(showLoader);
+})();

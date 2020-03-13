@@ -15,12 +15,11 @@
             <div class="col-md-3">
                 <ul class="nav nav-pills flex-column">
                     <li class="nav-item">
-                        {% block menu %}
-                        {% endblock %}
-
                         {% if admin %}
                             <a class="nav-link rounded-0" href="/acm_chall/admin/cases">Judge Cases</a>
                         {% endif %}
+                        {% block menu %}
+                        {% endblock %}
                     </li>
                 </ul>
             </div>
