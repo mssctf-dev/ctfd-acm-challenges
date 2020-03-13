@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 
@@ -52,19 +53,28 @@ class CppExecutor(ExecutorBase):
                 if challenge.max_real_time != -1
                 else challenge.max_cpu_time // 1000 * 60  # time limit in seconds * 60
             )
-            result, stats = self.check(
-                os.path.join(work_dir, 'run', 'outputs'),
-                os.path.join(work_dir, 'outputs'),
-                os.path.join(work_dir, 'run', 'outputs'), {
-                    'cpu_time': challenge.max_cpu_time,
-                    'memory': challenge.max_memory,
-                    # 'STACK_LIM': challenge.max_stack
-                }
-            )
-            task.result = result
-            task.time = stats['cpu_time']
-            task.memory = stats['memory']
-            db.session.commit()
+            with open(os.path.join(work_dir, 'compile', 'result.log')) as f:
+                compile_log = json.loads(f.read())
+            if compile_log['result'] != 0 or compile_log['exit_code'] == 0:
+                result, stats = self.check(
+                    os.path.join(work_dir, 'run', 'outputs'),
+                    os.path.join(work_dir, 'outputs'),
+                    os.path.join(work_dir, 'run', 'outputs'), {
+                        'cpu_time': challenge.max_cpu_time,
+                        'memory': challenge.max_memory,
+                        # 'STACK_LIM': challenge.max_stack
+                    }
+                )
+                task.result = result
+                task.time = stats['cpu_time']
+                task.memory = stats['memory']
+                db.session.commit()
+            else:
+                task.result = 'Compile Error'
+                with open(os.path.join(work_dir, 'compile', 'error.log')) as f:
+                    err_msg = f.read()
+                task.code = task.code + '\n/* compile error:\n' + err_msg + '\n*/'
+                db.session.commit()
         finally:
             if os.path.exists(work_dir):
                 shutil.rmtree(work_dir, ignore_errors=True)
