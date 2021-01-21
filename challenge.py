@@ -12,7 +12,7 @@ from CTFd.plugins.challenges import BaseChallenge
 from CTFd.utils.modes import get_model
 from CTFd.utils.uploads import delete_file, get_uploader
 from CTFd.utils.user import get_ip
-from .executor import running
+from .executor import running, ExecutorBase
 from .models import DynICPCModel, JudgeCaseFiles, PSubmission
 
 
@@ -156,6 +156,8 @@ class DynICPCChallenge(BaseChallenge):
     @staticmethod
     def real_attempt(user, team, challenge, request):
         r = request.form or request.get_json()
+        if r['language'] not in ExecutorBase.judgers:
+            return False, 'Unsupported Language'
         try:
             r['code'] = b64decode(r['submission']).decode()
             task = PSubmission(
