@@ -87,7 +87,7 @@ CTFd._internal.challenge.submit = function (preview) {
     }
     let params = {
         'challenge_id': challenge_id,
-        'submission': btoa(submission),
+        'submission': Base64.encode(submission),
         'language': language,
     };
     let deferred = $.Deferred();

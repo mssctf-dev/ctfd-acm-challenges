@@ -1,50 +1,62 @@
-{% extends "acm_base.html" %}
+{% if admin %} {% extends "admin/base.html" %}
+{% else %} {% extends "base.html" %}
+{% endif %}
+
 {% block stylesheets %}
-    <link rel="stylesheet" type="text/css"
-          href="{{ url_for('plugins.ctfd-acm-challenges.assets', path='css/queue.css') }}">
-{% endblock %}
-{% block menu %}
-    <a class="nav-link rounded-0 active" href="#">Judge Queue</a>
-    <a class="nav-link rounded-0" href="/acm_chall{{ "/admin" if admin }}/board">Scoreboard</a>
-    <br><br>
-    <label for="page">Page</label>
-    <span class="input-number-decrement">–</span>
-    <input id="page" type="text" value="1" min="1">
-    <span class="input-number-increment">+</span>
-    <div id="spinner" class="inactive">
-        <svg id="pause" fill="#000000" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
-             viewBox="0 4 24 24" width="24px" height="24px">
-            <path d="M 7.59375 3 L 9.0625 5 L 13 5 C 16.324219 5 19 7.675781 19 11 L 19 15 L 16 15 L 20 20.46875 L 24 15 L 21 15 L 21 11 C 21 6.59375 17.40625 3 13 3 Z M 4 3.53125 L 0 9 L 3 9 L 3 13 C 3 17.40625 6.59375 21 11 21 L 16.40625 21 L 14.9375 19 L 11 19 C 7.675781 19 5 16.324219 5 13 L 5 9 L 8 9 Z"></path>
-        </svg>
-        <svg version="1.1" id="continue" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
-             viewBox="-2 -2 92 92" xml:space="preserve">
-            <path class="visualizer" fill="transparent" stroke-width="10" stroke-miterlimit="1"
-                  d="m35,2.5c17.955803,0 32.5,14.544199 32.5,32.5c0,17.955803 -14.544197,32.5 -32.5,32.5c-17.955803,0 -32.5,-14.544197 -32.5,-32.5c0,-17.955801 14.544197,-32.5 32.5,-32.5z"></path>
-        </svg>
-    </div>
+<link rel="stylesheet" type="text/css" href="{{ url_for('plugins.ctfd-acm-challenges.assets', path='css/queue.css') }}">
 {% endblock %}
 
-{% block acm_content %}
-    <div>
-        <table class="table">
-            <thead>
-            <tr>
-                <th>Author</th>
-                <th>Challenge</th>
-                <th>Status</th>
-                <th width="10%">Language</th>
-                <th width="20%">Result</th>
-                <th>Date</th>
-                <th width="10%">Time</th>
-                <th width="10%">Memory</th>
-            </tr>
-            </thead>
-            <tbody id="data">
-            </tbody>
-        </table>
+{% block content %}
+<div class="jumbotron">
+    <div class="container">
+        <h1>Status</h1>
     </div>
+</div>
+<div class="container">
+    <div class="row">
+		<div class="col-md-12">
+			{% include "components/errors.html" %}
+		</div>
+	</div>
+    <div class="row">
+        <ul class="pagination" id="pagination">
+            <li class="page-prev" onclick="update(-1)">
+                <a class="prev" href="#">&lt;&lt;</a>
+            </li>
+            <li class="page-number">
+                <div class="circle">
+                    <div class="circle-half">
+                        <div class="circle-border" id="clipped"></div>
+                    </div>
+                    <div class="circle-border" id="fixed"></div>
+                    <span class="align-middle text-center" id="page">1</span>
+                </div>
+            </li>
+            <li class="page-next" onclick="update(+1)">
+                <a class="next" href="#">&gt;&gt;</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <table class="table">
+                <thead>
+                    <tr id="tab_head">
+                        <th>Author</th>
+                        <th>Challenge</th>
+                        <th width="10%">Language</th>
+                        <th width="20%">Status</th>
+                        <th>Date</th>
+                        <th width="10%">Time</th>
+                        <th width="10%">Memory</th>
+                    </tr>
+                </thead>
+                <tbody id="tab_data">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script defer src="{{ url_for('plugins.ctfd-acm-challenges.assets', path='js/queue.js') }}"></script>
+<script defer src="{{ url_for('plugins.ctfd-acm-challenges.assets', path='js/queue.js') }}"></script>
 {% endblock %}
