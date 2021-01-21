@@ -55,7 +55,7 @@ class CppExecutor(ExecutorBase):
             )
             with open(os.path.join(work_dir, 'compile', 'result.log')) as f:
                 compile_log = json.loads(f.read())
-            if compile_log['result'] != 0 or compile_log['exit_code'] == 0:
+            if compile_log['result'] == 0 and compile_log['exit_code'] == 0:
                 result, stats = self.check(
                     os.path.join(work_dir, 'run', 'outputs'),
                     os.path.join(work_dir, 'outputs'),
@@ -83,7 +83,3 @@ class CppExecutor(ExecutorBase):
                 db.session.commit()
                 self.callback(task)
         pass
-
-
-ExecutorBase.judgers['c'] = CppExecutor
-ExecutorBase.judgers['cpp'] = CppExecutor

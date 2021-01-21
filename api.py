@@ -4,7 +4,7 @@ from flask import (
     current_app, Blueprint, request,
     Response, stream_with_context,
     abort)
-from flask_restplus import Resource, Namespace
+from flask_restx import Resource, Namespace
 
 from CTFd.models import db, Solves, Fails
 from CTFd.schemas.files import FileSchema
@@ -54,7 +54,7 @@ class Submission(Resource):
         per_page = abs(int(request.args.get("slice", 10, type=int)))
         submissions = PSubmission.query
         if not is_admin():
-            submissions = submissions.filter(PSubmission.author != 0)
+            submissions = submissions.filter(PSubmission.author != 1)
             # don't show admin submissions
         if filter_result:
             submissions = submissions.filter_by(
